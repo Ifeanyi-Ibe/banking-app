@@ -1,4 +1,4 @@
-package com.phen.bankingapp.controller;
+package com.phen.bankingapp;
 
 import com.phen.bankingapp.model.*;
 import com.phen.bankingapp.service.BankAccountService;
@@ -7,8 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/v1/bank")
-public class AccountController {
+@RequestMapping
+public class controller {
 
 
     @Autowired
@@ -16,7 +16,7 @@ public class AccountController {
 
     @GetMapping("/account_info/{accountNumber}")
     public ResponseEntity<?> getAccountInfo(@PathVariable("accountNumber") String accountNumber, @RequestBody LoginRequest request) {
-        return bankAccountService.getAccountInfo(request);
+       return bankAccountService.getAccountInfo(request);
     }
 
     @GetMapping("/account_statement/{accountNumber}")
@@ -26,7 +26,7 @@ public class AccountController {
 
     @PostMapping("/deposit")
     public ResponseEntity<ResponseData> creditAccount(@RequestBody DepositRequest request) {
-        return bankAccountService.deposit(request);
+       return bankAccountService.deposit(request);
     }
 
     @PostMapping("/withdrawal")
@@ -38,5 +38,9 @@ public class AccountController {
     public ResponseEntity<AccountCreationResponse> addAccount(@RequestBody AccountCreationRequest request) {
         return bankAccountService.createAccount(request);
     }
-}
 
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request) throws Exception {
+        return bankAccountService.login(request);
+    }
+}

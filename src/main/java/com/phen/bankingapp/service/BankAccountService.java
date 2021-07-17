@@ -1,8 +1,15 @@
 package com.phen.bankingapp.service;
 
+import com.phen.bankingapp.config.UserDetailsImplService;
 import com.phen.bankingapp.model.*;
+import com.phen.bankingapp.security.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -10,7 +17,24 @@ import java.util.*;
 @Service
 public class BankAccountService {
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private UserDetailsImplService userDetailsService;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public BankAccountService(AuthenticationManager authenticationManager, UserDetailsImplService userDetailsService, JwtTokenProvider jwtTokenProvider, PasswordEncoder passwordEncoder) {
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.passwordEncoder = passwordEncoder;
+    }
+
     private List<Account> accounts = new ArrayList<>();
+    private List<User> users = new ArrayList<>();
 
     public ResponseEntity<AccountCreationResponse> createAccount(AccountCreationRequest request) {
         Account account = getAccount(request.getAccountName(), request.getAccountPassword());
@@ -30,7 +54,7 @@ public class BankAccountService {
 
         // Create new account and add it to the repository
         Account account1 = addAccount(request.getAccountName(), accountNumber, request.getAccountPassword(), request.getInitialDeposit());
-
+        addUser(account1);
         response = new AccountCreationResponse(HttpStatus.OK.value(), true, "Account created successfully.", account1.getAccountNumber());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -137,9 +161,29 @@ public class BankAccountService {
         return account;
     }
 
+    private void addUser(Account account) {
+        User newUser = new User();
+
+        newUser.setUsername(account.getAccountName());
+        newUser.setPassword(passwordEncoder.encode(account.getAccountPassword()));
+        newUser.setAccountNumber(account.getAccountNumber());
+
+        this.users.add(newUser);
+    }
+
+    public User findUserByName(String name) {
+        Optional<User> user = this.users.stream().filter(aUser -> aUser.getUsername().equals(name)).findFirst();
+        return user.orElse(null);
+    }
+
     private Account  getAccount(String accountName, String password) {
         Optional<Account> account = this.accounts.stream().filter(acc -> acc.getAccountName().equals(accountName) && acc.getAccountPassword().equals(password)).findFirst();
         return account.orElse(null);
+    }
+
+    private Account findByAccountName(String name) {
+            Optional<Account> account = this.accounts.stream().filter(acc -> acc.getAccountName().equals(name)).findFirst();
+            return account.orElse(null);
     }
 
     public Account findByNumberAndPassword(String accountNumber, String password) {
@@ -241,5 +285,26 @@ public class BankAccountService {
         transaction.setAccountBalance(0.0);
 
         return transaction;
+    }
+
+    public ResponseEntity<String> login(LoginRequest request) throws Exception {
+        Account account = getByAccountNumber(request.getAccountNumber());
+        String username = account.getAccountName();
+               try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username,
+                            account.getAccountPassword())
+            );
+        }
+        catch (Exception e) {
+            throw new Exception("Incorrect username or password", e);
+        }
+
+        final UserDetails userDetails = userDetailsService
+                .loadUserByUsername(username);
+
+        final String jwt = jwtTokenProvider.generateToken(userDetails);
+
+        return ResponseEntity.ok(jwt);
     }
 }
