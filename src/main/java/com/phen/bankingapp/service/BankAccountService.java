@@ -2,6 +2,7 @@ package com.phen.bankingapp.service;
 
 import com.phen.bankingapp.config.UserDetailsImplService;
 import com.phen.bankingapp.model.*;
+
 import com.phen.bankingapp.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,9 @@ public class BankAccountService {
 
     private List<Account> accounts = new ArrayList<>();
     private List<User> users = new ArrayList<>();
+
+    public BankAccountService() {
+    }
 
     public ResponseEntity<AccountCreationResponse> createAccount(AccountCreationRequest request) {
         Account account = getAccount(request.getAccountName(), request.getAccountPassword());
@@ -179,11 +183,6 @@ public class BankAccountService {
     private Account  getAccount(String accountName, String password) {
         Optional<Account> account = this.accounts.stream().filter(acc -> acc.getAccountName().equals(accountName) && acc.getAccountPassword().equals(password)).findFirst();
         return account.orElse(null);
-    }
-
-    private Account findByAccountName(String name) {
-            Optional<Account> account = this.accounts.stream().filter(acc -> acc.getAccountName().equals(name)).findFirst();
-            return account.orElse(null);
     }
 
     public Account findByNumberAndPassword(String accountNumber, String password) {

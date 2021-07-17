@@ -1,4 +1,4 @@
-package com.phen.bankingapp;
+package com.phen.bankingapp.controller;
 
 import com.phen.bankingapp.model.*;
 import com.phen.bankingapp.service.BankAccountService;
@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping
-public class controller {
+public class AccountController {
 
 
     @Autowired
